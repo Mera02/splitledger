@@ -7,9 +7,14 @@ from app.db.connection import get_connection
 from app.db.schema import initialize_database
 from app.services.groups import create_group, add_member, clean_name
 from app.services.expenses import create_expense
-from app.db.repositories import list_members
+from app.db.repositories import (
+    list_expenses,
+    list_groups,
+    list_members,
+)
 from app.services.balances import get_group_balances
 from app.services.settlements import get_group_settlements
+from fastapi.middleware.cors import CORSMiddleware
 
 
 
@@ -23,6 +28,16 @@ app = FastAPI(
     title="SplitLedger API",
     version="0.1.0",
     lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -196,5 +211,45 @@ def get_settlements_endpoint(group_id: int):
             for settlement in settlements
         ]
 
+    finally:
+        connection.close()
+
+
+@app.get("/api/groups")
+def get_groups_endpoint():
+    connection = get_connection()
+
+    try:
+        return list_groups(connection)
+
+    finally:
+        connection.close()
+
+
+
+@app.get("/api/groups/{group_id}/members")
+def get_members_endpoint(group_id: int):
+    connection = get_connection()
+
+    try:
+        return list_members(
+            connection,
+            group_id,
+        )
+
+    finally:
+        connection.close()
+
+
+
+@app.get("/api/groups/{group_id}/expenses")
+def get_expenses_endpoint(group_id: int):
+    connection = get_connection()
+
+    try:
+        return list_expenses(
+            connection,
+            group_id,
+        )
     finally:
         connection.close()

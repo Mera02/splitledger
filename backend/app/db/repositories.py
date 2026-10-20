@@ -172,3 +172,29 @@ def get_total_owed_by_member(
         row["member_id"]: row["total_owed"]
         for row in rows
     }
+
+
+def list_expenses(
+    connection: sqlite3.Connection,
+    group_id: int,
+) -> list[dict]:
+    rows = connection.execute(
+        """
+        SELECT
+            e.id,
+            e.group_id,
+            e.payer_member_id,
+            m.name AS payer_name,
+            e.description,
+            e.amount_cents,
+            e.created_at
+        FROM expenses AS e
+        JOIN members AS m
+            ON m.id = e.payer_member_id
+        WHERE e.group_id = ?
+        ORDER BY e.id DESC
+        """,
+        (group_id,),
+    ).fetchall()
+
+    return [dict(row) for row in rows]
